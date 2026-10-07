@@ -95,9 +95,18 @@ st.markdown(
 )
 
 # One-time upgrade: older indexes lack the access-level info, so rebuild automatically.
-if rag.needs_reindex():
-    with st.spinner("Updating the index for the new features (one time only, about a minute)..."):
-        rag.ingest_all(progress=lambda m: None)
+# First start (nothing indexed yet) is handled the same way, so no separate "python ingest.py" is needed.
+if not st.session_state.get("auto_indexed") and (rag.needs_reindex() or rag.needs_first_index()):
+    st.session_state["auto_indexed"] = True  # try once per session, so a failure can never loop
+    try:
+        with st.spinner("Setting up for the first time: reading and indexing your documents "
+                        "(about a minute, one time only)..."):
+            rag.ingest_all(progress=lambda m: None)
+    except Exception as e:  # most often: Ollama is not running or the models are not downloaded
+        st.error("Could not index the documents. Make sure the Ollama app is running and you have run "
+                 "`ollama pull bge-m3` and `ollama pull llama3.2:3b`. Then refresh this page.\n\n"
+                 f"Details: {e}")
+        st.stop()
     st.rerun()
 
 ROLE_HELP = {
@@ -208,7 +217,7 @@ if mode == "💬 Ask documents":
                 with st.spinner("Searching documents..."):
                     hits, best = rag.retrieve(question, k=top_k, doc_types=chosen or None, levels=levels)
                     rd = rag.restricted_distance(question, levels)  # best match among hidden documents
-            locked = (not catalog) and rag.lock_applies(rd, best)
+            locked = (not catalog) and (rag.lock_applies(rd, best) or rag.keyword_lock(question, levels))
             lock_message = (f"🔒 This looks related to a document that is restricted for the **{role}** role. "
                             "Please ask a Manager for access.")
 
