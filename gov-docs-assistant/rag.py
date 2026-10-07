@@ -216,6 +216,13 @@ def needs_reindex():
     return any("classification" not in m or "idx" not in m for m in metas)
 
 
+def needs_first_index():
+    """True on the very first start: nothing is indexed yet, but there are documents in the docs folder."""
+    if get_collection().count() > 0:
+        return False
+    return any(p.suffix.lower() in SUPPORTED for p in DOCS_DIR.rglob("*"))
+
+
 def set_classification(file_name: str, level: str):
     """Change a file's level without re-indexing, and remember it in docs/access.json."""
     if level not in LEVELS:
@@ -403,10 +410,55 @@ def restricted_distance(question: str, levels):
     return d[0] if d else None
 
 
-def lock_applies(hidden_dist, visible_best, margin: float = 0.1):
+_STOP = set("""what which when where who whom whose why how does did the and for are was were been being have has had
+with from that this these those there their about into than then them they your you our can could would should will shall
+any all not but also per each many much more most some such only other over under after before between during
+yang dan untuk dengan dari ini itu apa siapa bila bagaimana berapa adalah akan telah boleh atau pada dalam oleh kepada""".split())
+
+
+def _terms(text: str):
+    out = set()
+    for w in re.findall(r"[^\W\d_]+", text.lower()):
+        if len(w) >= 4 and w not in _STOP:
+            out.add(w[:-1] if w.endswith("s") and len(w) > 4 else w)
+    return out
+
+
+def keyword_lock(question: str, levels):
+    """Second safety net next to the distance check. True when the question's key words appear only in documents
+    this role cannot see and in none of the documents it can see. Example: Public asks "alert thresholds agreed"
+    and "alert" exists only in the confidential minutes. Nothing from hidden documents is ever shown."""
+    if not levels or set(LEVELS) <= set(levels):
+        return False
+    col = get_collection()
+    if col.count() == 0:
+        return False
+    c = _bm25(col)
+    key = (id(c["docs"]), tuple(sorted(levels)))   # word lists are per role, and rebuilt when the index changes
+    if c.get("terms_key") != key:
+        vis, hid = set(), set()
+        for d, m in zip(c["docs"], c["metas"]):
+            (vis if m.get("classification", "internal") in levels else hid).update(_terms(d))
+        c["terms"] = (vis, hid)
+        c["terms_key"] = key
+    vis, hid = c["terms"]
+    q = _terms(question)
+    hidden_only = {t for t in q if t in hid and t not in vis}
+    visible_hit = {t for t in q if t in vis}
+    # lock when a key word exists only in hidden documents, and the visible documents match fewer of the key words
+    return bool(hidden_only) and len(visible_hit) < len(hidden_only)
+
+
+# how much closer a hidden document must be before we show the lock (smaller = locks more often)
+LOCK_MARGIN = float(os.getenv("LOCK_MARGIN", "0.03"))
+
+
+def lock_applies(hidden_dist, visible_best, margin: float = None):
     """Show the "restricted" message when the best document for this question is one the user cannot see.
     - hidden_dist: distance of the best hidden match (None = nothing hidden)
     - visible_best: distance of the best visible match (None = nothing visible)"""
+    if margin is None:
+        margin = LOCK_MARGIN
     if hidden_dist is None or hidden_dist > MAX_DISTANCE:
         return False
     if visible_best is None or visible_best > MAX_DISTANCE:
