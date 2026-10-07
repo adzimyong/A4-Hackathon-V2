@@ -1,0 +1,11 @@
+{
+  "default": "internal",
+  "types": {
+    "circular": "public",
+    "sop": "internal",
+    "minutes": "confidential"
+  },
+  "files": {
+    "FAQ_MySubsidi.pdf": "confidential"
+  }
+}
