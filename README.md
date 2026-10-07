@@ -48,6 +48,29 @@ Everything runs on your own laptop: no cloud, no API keys, no document ever leav
 - Evelyn Ann ANAK KENEDY
 - Megan Nacha SENGALANG
 
+**Screenshots**
+
+<img width="1917" height="967" alt="scrn1" src="https://github.com/user-attachments/assets/3fcb25a9-270d-4de8-a4cd-a6fad42495c9" />
+
+<img width="1917" height="902" alt="scrn2" src="https://github.com/user-attachments/assets/8e573e4a-ed0c-4acf-907d-d7f18ce2dd40" />
+
+<img width="335" height="901" alt="scrn3" src="https://github.com/user-attachments/assets/5fe696d0-a1a8-427d-a0f1-41d308ce91f5" />
+
+<img width="1917" height="912" alt="scrn4" src="https://github.com/user-attachments/assets/5d82d44a-4012-4ebb-976e-97b42221e51e" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 
 **Download:** on the GitHub page click the green **Code** button, then **Download ZIP**, and follow the steps below.
