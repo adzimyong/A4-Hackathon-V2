@@ -12,6 +12,35 @@ Everything runs on your own laptop: no cloud, no API keys, no document ever leav
 
 ---
 
+## About the project
+
+**The problem.** Government agencies keep thousands of documents: policies, SOPs, circulars, guidelines, reports and meeting minutes. Finding one answer means opening many files, and staff lose a lot of time searching.
+
+**Our solution.** *Ask Our Documents* is a search assistant for these documents. An employee types a normal question, in English or Bahasa Malaysia, and gets a short answer with the exact source file and page, so they can check it.
+
+**How it works (in simple words)**
+1. The app reads every document (PDF, Word, text) and cuts it into small passages.
+2. Each passage is turned into numbers that capture its meaning, and stored in a local database.
+3. When someone asks a question, the app finds the most relevant passages. It combines search by meaning with search by exact keywords.
+4. A small AI model writes the answer using only those passages, and cites them like [1] and [2].
+5. If nothing relevant is found, the app says so and does not guess.
+
+**Main features**
+- **Cited answers:** every answer shows its sources and the passage it came from
+- **Honest when unsure:** it says "I couldn't find it" instead of making up an answer
+- **Access control:** Public, Staff and Manager roles. Documents are classified as public, internal or confidential, and each role only sees and searches what it is allowed to. Restricted topics show a 🔒 message
+- **Library overview:** ask "How many files are there?" or browse files by folder
+- **Meeting minutes to action items:** turns minutes into a table of decisions, tasks, owners and deadlines, which can be downloaded as CSV
+- **Easy to add documents:** managers can upload files and choose who can see them
+
+**Why it runs locally.** Government documents can be sensitive. Everything runs on the user's own computer, with no cloud service and no internet needed after setup, so no document ever leaves the machine.
+
+**Built with:** Python, Streamlit (web interface), Ollama (runs the AI models on the laptop: `bge-m3` for search and `llama3.2:3b` for answers), ChromaDB (local database) and BM25 keyword search.
+
+**Possible next steps:** connect to open government data portals such as data.gov.my, add more file types and scanned documents (OCR), add real user login instead of the demo roles, and use a larger model on a stronger machine for better answers.
+
+---
+
 ## Team
 - Mohamad Adzim Yong BIN MOHD. SHAHRIL
 - Siti Hasya BINTI MOHAMMAD APPANDI
