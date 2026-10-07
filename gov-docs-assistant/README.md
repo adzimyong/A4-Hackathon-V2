@@ -1,50 +1,174 @@
-# Ask Our Documents (local RAG)
+# Ask Our Documents: User Manual
 
-Ask questions about government documents (SOPs, circulars, minutes, reports) and get answers
-with sources. Everything runs on your own computer: no data leaves the machine.
+A fully local assistant that answers questions about government documents (policies, SOPs, circulars, meeting minutes) with cited sources.
+Everything runs on your own laptop: no cloud, no API keys, no document ever leaves the machine.
 
-## One-time setup
+**What it can do**
 
-1. Install Ollama: https://ollama.com/download
-2. Download the two models (needs internet, once only):
+- Answer questions in English or Bahasa Malaysia, with the source file and page for every answer
+- Show a library overview ("How many files are there?")
+- Turn meeting minutes into an action-items table (owner, deadline) and download it as CSV
+- Control who can see what: **Public**, **Staff** and **Manager** roles
 
+---
+
+**Download:** on the GitHub page click the green **Code** button, then **Download ZIP**, and follow the steps below.
+
+---
+
+## 1. What you need
+- A Windows laptop with **8 GB RAM or more** (16 GB is better) and about **6 GB free disk space**
+- Internet for the first-time setup only (to download Python packages and the AI models)
+- About 20 to 30 minutes for the first setup
+
+## 2. Step by step setup (Windows + VS Code)
+
+### Step 1: Install Python (64-bit)
+1. Go to https://www.python.org/downloads/windows/ and download **Python 3.11 or 3.12, "Windows installer (64-bit)"**.
+   A 32-bit Python cannot install the database library (chromadb), so do not pick the 32-bit installer.
+2. Run the installer. **Tick "Add python.exe to PATH"** on the first screen, then click Install Now.
+3. Open a new PowerShell window and check: `python --version` (it should print a version number).
+4. Check it is 64-bit: `python -c "import struct; print(struct.calcsize('P')*8)"` must print **64**.
+   If it prints 32, uninstall that Python (Settings > Apps) and install the 64-bit one.
+
+### Step 2: Install Ollama (the local AI engine)
+1. Go to https://ollama.com/download, download the Windows installer and run it.
+2. Check in PowerShell: `ollama --version`
+3. **Only if you get an "untrusted mount point" error** when pulling models (this happens on some laptops):
    ```
-   ollama pull bge-m3          # reads meaning (English + Malay)
-   ollama pull llama3.2:3b     # writes the answers (small, laptop friendly)
+   mkdir C:\ollama_models
+   setx OLLAMA_MODELS C:\ollama_models
    ```
+   Then quit Ollama from the system tray (bottom right), open it again, and continue.
 
-   Weak laptop (8 GB RAM)? Try `llama3.2:1b`. Strong laptop / GPU? Try `qwen2.5:7b` or `llama3.1:8b`.
-   Switch models with: `set LLM_MODEL=qwen2.5:7b` (Windows) or `export LLM_MODEL=qwen2.5:7b` (Mac/Linux).
+### Step 3: Download the two AI models
+In PowerShell:
+```
+ollama pull bge-m3
+ollama pull llama3.2:3b
+```
+This is about 2.5 GB in total. `bge-m3` reads and searches documents, `llama3.2:3b` writes the answers.
 
-3. Install Python packages:
+### Step 4: Get the project
+1. Download the project ZIP (GitHub: **Code > Download ZIP**, or the link you were given).
+2. Right-click the zip, choose **Extract All**, and extract it to a plain folder such as `C:\gov-docs-assistant` (if the zip makes a folder inside a folder, open the inner one that contains `app.py`).
+   Avoid OneDrive or Desktop folders that sync, because syncing can lock the database files.
+3. Open **VS Code**, choose **File > Open Folder**, and pick the extracted `gov-docs-assistant` folder.
+4. Open a terminal inside VS Code: **Terminal > New Terminal**.
 
-   ```
-   python -m venv venv
-   venv\Scripts\activate        # Windows   (Mac/Linux: source venv/bin/activate)
-   pip install -r requirements.txt
-   ```
+### Step 5: Install the Python libraries (one time)
+```
+python -m pip install -r requirements.txt
+```
+This can take a few minutes. A "pip notice: new release available" message is harmless.
 
-## Run it
+If you see **"No module named pip"**, try these in order (stop when one works):
+1. `python -m ensurepip --upgrade`, then run the install command again.
+2. `py -m pip install -r requirements.txt` (the `py` launcher often finds the right Python).
+3. Run `where python`. If the path contains `WindowsApps`, that is the Microsoft Store shortcut and not a real Python. Reinstall Python from python.org (tick "Add python.exe to PATH" and keep **pip** ticked under Customize installation), then open a new terminal.
+4. In VS Code press Ctrl + Shift + P, type **Python: Select Interpreter**, and pick the Python you installed. Close and reopen the terminal.
 
-1. Put documents in the `docs/` folder. The sub-folder name becomes the document type:
-   `docs/sop/`, `docs/circular/`, `docs/minutes/` (make any folder you like).
-2. Index them: `python ingest.py`
-3. Start the app: `streamlit run app.py`
+### Step 6: Index the documents
+```
+python ingest.py
+```
+You should see it read the three sample documents and report the number of chunks. Run this again whenever you add files by hand to the `docs` folder.
 
-You can also upload documents from the app's sidebar.
+### Step 7: Start the app
+```
+python -m streamlit run app.py
+```
+Your browser opens at **http://localhost:8501**. If it does not, open that address yourself.
+To stop the app, click the terminal and press **Ctrl + C**.
 
-## Tips for the demo
+> Shortcut: double-click `setup.bat` once (Steps 5 and 6 plus the model downloads), then double-click `run.bat` any time to start the app.
 
-- Use text-based PDFs (you can select the text). Scanned PDFs need OCR, which this starter skips.
-- Put the year in the filename (`circular_3_2024.pdf`) and it shows up as metadata.
-- If it refuses too often, raise `MAX_DISTANCE` (default 0.65). If it answers off-topic questions, lower it.
-- Prepare 5 to 6 questions: simple lookup, one combining two documents, one in Bahasa Malaysia,
-  and one that should be refused ("What is the CEO's salary?" when no document says so).
+---
 
-## Files
+## 3. How to use it
 
-| File | What it does |
+**Roles (top of the left sidebar)**
+
+| Role | Can see |
 |---|---|
-| `rag.py` | The brain: read, chunk, embed, store, search, answer |
-| `ingest.py` | Command to index everything in `docs/` |
-| `app.py` | The chat website (Streamlit) |
+| Public | public documents only (circulars) |
+| Staff | public + internal documents (SOPs) |
+| Manager | everything, and can add or reclassify documents |
+
+Each role has its own chat history. If you ask about a document your role cannot see, the app replies with a 🔒 message instead of the answer.
+
+**Ask documents (default mode)**
+
+Type a question at the bottom. The answer cites sources like [1]. Click **Sources** under an answer to see the exact passages.
+The first question after starting is slower because the model is loading. After that it is faster.
+
+**Library overview**
+
+Ask "How many files are there?" or open **Library** in the sidebar to see every file by folder and access level.
+
+**Action items (Mode: 📝 Action items)**
+
+1. Pick a meeting-minutes document.
+2. Click **Extract action items**. Minutes that use `ACTION:` and `DECISION:` labels are read instantly.
+   For informal minutes, tick **Use the AI to read the whole document** (slower).
+3. Use **✖ Cancel** if it takes too long. Download the table with **Download as CSV**.
+
+**Add or reclassify documents (Manager only)**
+
+- Sidebar > **Add a document**: upload a PDF, DOCX, TXT or MD file, choose its type and who can see it, then **Add & index**.
+- **Change who can see a document** changes a file's level at any time.
+
+**Adding your own files by hand**
+
+Put files in `docs/<type>/` (for example `docs/sop/`), then run `python ingest.py` again or click **Re-index everything** as Manager.
+
+---
+
+## 4. Sample documents and demo questions
+The `docs` folder contains three fictional sample documents (they say "SAMPLE DOCUMENT" in the footer).
+
+| Role | Question | Expected answer |
+|---|---|---|
+| Public | What is the limit for direct purchase? | RM 20,000 |
+| Public | When does Circular 3/2026 take effect? | 1 November 2026 |
+| Public | Which circular does it replace? | Circular No. 5 of 2024 |
+| Staff | How many days before must I apply for annual leave? | 7 working days |
+| Staff | What should I do for emergency leave? | Inform within 2 hours |
+| Staff | How many days of leave can be carried forward? | 5 days |
+| Manager | What alert thresholds were agreed? | 3.5 metres (first warning), 4.2 metres (evacuation) |
+| Manager | How many sensors have been installed? | 18 of the 30 |
+| Manager | Who will publish the tender for the backup power units? | Siti Mariam |
+| Public | What alert thresholds were agreed? | 🔒 restricted for the Public role |
+| Any | How many files are there? | Count that depends on the role |
+
+---
+
+## 5. Troubleshooting
+| Problem | Fix |
+|---|---|
+| `streamlit` is not recognized | Always start with `python -m streamlit run app.py` |
+| No module named pip | See the box under Step 5 (`python -m ensurepip --upgrade`, or `py -m pip ...`, or reinstall Python with pip ticked) |
+| chromadb will not install | Most often a 32-bit Python (Step 1, point 4). Install 64-bit Python 3.11 or 3.12. Then run `python -m pip install --upgrade pip` and try again |
+| `python` is not recognized | Reinstall Python and tick "Add python.exe to PATH", then open a new terminal |
+| Connection refused / cannot reach Ollama | Open the Ollama app (check the system tray), then try again |
+| `model not found` | Run the two `ollama pull` commands from Step 3 |
+| "untrusted mount point" when pulling | See Step 2, point 3 (set `OLLAMA_MODELS`) |
+| First answer is very slow | Normal: the model is loading. Ask one warm-up question before a demo |
+| Answers are slow every time | Close other heavy programs, lower "Passages to use" in the sidebar to 3 |
+| App says "couldn't find anything relevant" for a question that should work | Rephrase, or set a wider limit: `set MAX_DISTANCE=0.75` then start the app in the same terminal |
+| A new file is not found | Click **Re-index everything**, or run `python ingest.py` |
+| Database errors or odd file-lock messages | Move the project out of OneDrive, or set `DB_DIR` to a folder like `C:\gov_db` |
+| Port 8501 already in use | Add `--server.port 8502` to the run command |
+| Start fresh | Delete the `db` folder, then run `python ingest.py` |
+
+## 6. Sharing the project with others
+1. Put `gov-docs-assistant.zip` on Google Drive, OneDrive, or Teams, and set the link to "Anyone with the link can view".
+2. Send the link together with this manual. The other person follows Section 2 on their own laptop.
+3. Each laptop needs its own Ollama and models; the models are not inside the zip.
+
+## 7. Project files
+- `app.py`: the web interface
+- `rag.py`: reading, searching, access control, answering, action items
+- `ingest.py`: builds the search index from the `docs` folder
+- `docs/`: your documents (sample files included)
+- `.streamlit/config.toml`: colours and theme
