@@ -12,6 +12,15 @@ Everything runs on your own laptop: no cloud, no API keys, no document ever leav
 
 ---
 
+## Team
+- Mohamad Adzim Yong BIN MOHD. SHAHRIL
+- Siti Hasya BINTI MOHAMMAD APPANDI
+- Aisya BINTI ABU HASSAN ALSHAARI
+- Evelyn Ann ANAK KENEDY
+- Megan Nacha SENGALANG
+
+---
+
 **Download:** on the GitHub page click the green **Code** button, then **Download ZIP**, and follow the steps below.
 
 ---
