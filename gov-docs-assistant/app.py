@@ -211,24 +211,29 @@ if mode == "💬 Ask documents":
         with st.chat_message("assistant"):
             catalog = rag.answer_catalog_question(question, levels)  # "how many files...?" from the database
             rd = None
-            if catalog:
+            injection = (not catalog) and rag.is_injection(question)  # "ignore all instructions ..."
+            if catalog or injection:
                 hits, best = [], None
             else:
                 with st.spinner("Searching documents..."):
                     hits, best = rag.retrieve(question, k=top_k, doc_types=chosen or None, levels=levels)
                     rd = rag.restricted_distance(question, levels)  # best match among hidden documents
-            locked = (not catalog) and (rag.lock_applies(rd, best) or rag.keyword_lock(question, levels))
+            locked = (not catalog) and (not injection) and (rag.lock_applies(rd, best) or rag.keyword_lock(question, levels))
             lock_message = (f"🔒 This looks related to a document that is restricted for the **{role}** role. "
                             "Please ask a Manager for access.")
 
             if catalog:
                 reply = catalog
                 st.markdown(reply)
+            elif injection:
+                reply = ("I can only answer questions about the documents, and I can't change my rules. "
+                         "Please ask a question about your documents.")
+                st.markdown(reply)
             elif locked:
                 reply = lock_message
                 st.markdown(reply)
                 hits = []
-            elif not hits or (best is not None and best > rag.MAX_DISTANCE):
+            elif not hits or (best is not None and best > rag.MAX_DISTANCE) or not rag.grounded(question, hits):
                 if rag.get_collection().count() == 0:
                     reply = "No documents are indexed yet. Add some in the sidebar or run `python ingest.py`."
                 else:
