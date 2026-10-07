@@ -210,3 +210,5 @@ The `docs` folder contains three fictional sample documents (they say "SAMPLE DO
 - `ingest.py`: builds the search index from the `docs` folder
 - `docs/`: your documents (sample files included)
 - `.streamlit/config.toml`: colours and theme
+
+## 7. ScreenShots
